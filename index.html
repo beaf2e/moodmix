@@ -1002,10 +1002,11 @@ const state = {
    dropzone & file
    ============================================================ */
 const dz = $("#dropzone");
-dz.addEventListener("click", () => $("#file-input").click());
+// label[for=file-input]이 click을 input으로 위임하므로 별도 click 핸들러 불필요
 $("#file-input").addEventListener("change", e => {
   if (e.target.files[0]) handleFile(e.target.files[0]);
 });
+// 드래그&드롭은 데스크탑에서만 유효
 ["dragenter","dragover"].forEach(ev => dz.addEventListener(ev, e => e.preventDefault()));
 dz.addEventListener("drop", e => {
   e.preventDefault();
