@@ -317,6 +317,11 @@ input { font: inherit; }
   border-radius: var(--r);
   padding: 6px 16px;
   margin-top: 4px;
+  transition: opacity .5s ease;
+}
+.mood-card.is-locked {
+  opacity: 0.45;
+  pointer-events: none;
 }
 .mood-row {
   display: grid;
@@ -851,20 +856,20 @@ input[type=range]::-webkit-slider-thumb {
       </div>
 
       <div class="section-h">분위기 보정</div>
-      <div class="mood-card">
+      <div class="mood-card is-locked" id="mood-card">
         <div class="mood-row">
           <label for="m-energy">Energy</label>
-          <input type="range" id="m-energy" min="0" max="100" value="30">
+          <input type="range" id="m-energy" min="0" max="100" value="50" disabled>
           <span class="val" id="m-energy-val" aria-hidden="true">⚡</span>
         </div>
         <div class="mood-row">
           <label for="m-chill">Chill</label>
-          <input type="range" id="m-chill" min="0" max="100" value="80">
+          <input type="range" id="m-chill" min="0" max="100" value="50" disabled>
           <span class="val" id="m-chill-val" aria-hidden="true">🌙</span>
         </div>
         <div class="mood-row">
           <label for="m-acoustic">Acoustic</label>
-          <input type="range" id="m-acoustic" min="0" max="100" value="60">
+          <input type="range" id="m-acoustic" min="0" max="100" value="50" disabled>
           <span class="val" id="m-acoustic-val" aria-hidden="true">🎸</span>
         </div>
       </div>
@@ -1006,12 +1011,25 @@ function handleFile(file) {
   if (!file.type.startsWith("image/")) return;
   state.file = file;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     state.dataUrl = reader.result;
     let img = dz.querySelector("img.preview");
     if (!img) { img = document.createElement("img"); img.className = "preview"; dz.appendChild(img); }
     img.src = state.dataUrl;
     dz.classList.add("has-image");
+
+    // 1) 슬라이더 unlock
+    $("#mood-card").classList.remove("is-locked");
+    $$("#mood-card input[type=range]").forEach(el => el.removeAttribute("disabled"));
+
+    // 2) 사진 색감 기반 자동 추정
+    try {
+      const m = await analyzeMoodFromImage(state.dataUrl);
+      setEnergy(m.energy);
+      setChill(m.chill);
+      setAcoustic(m.acousticness);
+    } catch (_) {}
+
     refreshCTA();
   };
   reader.readAsDataURL(file);
@@ -1049,19 +1067,57 @@ $$("#genres .genre").forEach(b => {
 function bindSlider(id, key) {
   const el = $("#" + id);
   const val = $("#" + id + "-val");
-  const update = () => {
+  const applyFromValue = () => {
     state.mood[key] = parseInt(el.value, 10) / 100;
-    // 아이콘이 슬라이더 값에 따라 진해지고 살짝 커짐
     val.style.opacity = (0.3 + state.mood[key] * 0.7).toFixed(2);
     val.style.transform = `scale(${(0.85 + state.mood[key] * 0.3).toFixed(2)})`;
     el.style.setProperty("--p", el.value + "%");
   };
-  el.addEventListener("input", update);
-  update();
+  el.addEventListener("input", applyFromValue);
+  applyFromValue();
+  return (v) => {
+    const clamped = Math.max(0, Math.min(1, v));
+    el.value = String(Math.round(clamped * 100));
+    applyFromValue();
+  };
 }
-bindSlider("m-energy", "energy");
-bindSlider("m-chill", "chill");
-bindSlider("m-acoustic", "acousticness");
+const setEnergy   = bindSlider("m-energy", "energy");
+const setChill    = bindSlider("m-chill", "chill");
+const setAcoustic = bindSlider("m-acoustic", "acousticness");
+
+/* 사진 색감/광원 기반으로 분위기 슬라이더 자동 추정 */
+function analyzeMoodFromImage(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const size = 64;
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let bright = 0, sat = 0, warm = 0;
+      const n = size * size;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        bright += (r + g + b) / 3 / 255;
+        sat    += mx === 0 ? 0 : (mx - mn) / mx;
+        warm   += (r - b) / 255;
+      }
+      const avgB = bright / n;   // 0~1
+      const avgS = sat / n;      // 0~1
+      const avgW = warm / n;     // -1~1
+
+      const energy = Math.max(0.1, Math.min(0.95, avgB * 0.55 + avgS * 0.55));
+      const chill  = Math.max(0.1, Math.min(0.95, 0.5 + (-avgW) * 0.35 + (1 - avgB) * 0.35 - avgS * 0.15));
+      const acoust = Math.max(0.15, Math.min(0.95, 0.45 + (1 - avgS) * 0.45 + (avgW > 0 ? avgW * 0.15 : 0)));
+      resolve({ energy, chill, acousticness: acoust });
+    };
+    img.onerror = () => resolve({ energy: 0.5, chill: 0.5, acousticness: 0.5 });
+    img.src = dataUrl;
+  });
+}
 
 function refreshCTA() {
   $("#generate").disabled = !(state.file && state.genre);
