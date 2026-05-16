@@ -111,8 +111,8 @@ input { font: inherit; }
 .navbar {
   position: sticky; top: 0;
   display: flex; align-items: center;
-  height: calc(44px + var(--safe-top));
-  padding: var(--safe-top) 8px 0;
+  height: calc(56px + var(--safe-top));
+  padding: calc(var(--safe-top) + 14px) 8px 6px;
   z-index: 20;
   background: rgba(0,0,0,0);
   transition: background .25s ease, backdrop-filter .25s ease, border-color .25s ease;
@@ -382,7 +382,7 @@ input[type=range]::-webkit-slider-thumb {
    ============================================================ */
 .pl-hero {
   position: relative;
-  margin-top: calc(-44px - var(--safe-top));
+  margin-top: calc(-56px - var(--safe-top));
   min-height: 600px;
   background: var(--bg);
   overflow: hidden;
@@ -407,7 +407,7 @@ input[type=range]::-webkit-slider-thumb {
 }
 .pl-hero-content {
   position: relative; z-index: 2;
-  padding: calc(84px + var(--safe-top)) 20px 26px;
+  padding: calc(96px + var(--safe-top)) 20px 26px;
   display: flex; flex-direction: column;
   min-height: 600px;
   justify-content: flex-end;
@@ -872,6 +872,11 @@ input[type=range]::-webkit-slider-thumb {
           <input type="range" id="m-acoustic" min="0" max="100" value="50" disabled>
           <span class="val" id="m-acoustic-val" aria-hidden="true">🎸</span>
         </div>
+        <div class="mood-row">
+          <label for="m-popular">Popular</label>
+          <input type="range" id="m-popular" min="0" max="100" value="50" disabled>
+          <span class="val" id="m-popular-val" aria-hidden="true">🌟</span>
+        </div>
       </div>
 
       <button class="cta" id="generate" disabled>플레이리스트 생성</button>
@@ -984,7 +989,7 @@ const state = {
   file: null,
   dataUrl: null,
   genre: null,
-  mood: { energy: 0.3, chill: 0.8, acousticness: 0.6 },
+  mood: { energy: 0.5, chill: 0.5, acousticness: 0.5, popularity: 0.5 },
   tracks: [],
   currentIndex: -1,
   isPlaying: false,
@@ -1084,6 +1089,7 @@ function bindSlider(id, key) {
 const setEnergy   = bindSlider("m-energy", "energy");
 const setChill    = bindSlider("m-chill", "chill");
 const setAcoustic = bindSlider("m-acoustic", "acousticness");
+const setPopular  = bindSlider("m-popular", "popularity");
 
 /* 사진 색감/광원 기반으로 분위기 슬라이더 자동 추정 */
 function analyzeMoodFromImage(dataUrl) {

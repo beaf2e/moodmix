@@ -21,12 +21,14 @@ const SYSTEM_PROMPT = `너는 이미지 분석을 통해 사용자의 음악 취
 - 장르 고정: 사용자가 선택한 장르를 절대 벗어나지 말 것.
 - 선곡 이유(curator_note): 해당 곡이 사진의 '어떤 시각적 요소' 때문에 선곡되었는지 앱의 큐레이션 노트처럼 1문장으로.
 - 실존 데이터: 반드시 실제 스트리밍 서비스(Spotify/Apple Music/YouTube Music)에 등록된 곡/아티스트만. 환각 절대 금지.
-- **다양성 (가장 중요)**:
-  - 누구나 아는 메가히트(차트 1위, 빌보드 톱, 국민가요급, 신곡 차트 1위)는 **최대 2곡**까지만.
-  - 나머지는 마니아·평론가에게 사랑받지만 대중적으로는 덜 알려진 곡 / B-side / 앨범 수록곡 / 인디 신·소형 레이블 아티스트로 채울 것.
-  - 같은 아티스트는 **최대 1곡**. (예외 없음)
-  - 발매 연도도 분산 — 같은 해 곡만 모으지 말고 다양한 시기에서.
-  - 진부한 추천(같은 장르 사진에 항상 등장하는 단골 곡)을 의식적으로 피할 것.
+- **인기도(popularity) 0~1 값에 따라 선곡 분포를 조정**:
+  - popularity < 0.30 → 메가히트 0~1곡, 나머지는 마니아·B-side·인디·소형 레이블·앨범 트랙.
+  - popularity 0.30~0.65 → 균형. 잘 알려진 곡 2~4곡 + 덜 유명한 곡 6~8곡.
+  - popularity > 0.65 → 누구나 아는 메가히트·차트 상위곡 위주. 익숙하고 보편적인 선곡.
+- 어느 경우든:
+  - 같은 아티스트는 **최대 1곡** (예외 없음).
+  - 발매 연도 분산 — 같은 해 곡만 모으지 말 것.
+  - 같은 장르 사진에 항상 등장하는 단골 추천을 의식적으로 피할 것.
 - 같은 사진/장르라도 매번 다른 곡 조합으로 큐레이션할 것 — 사진의 색감·광원·디테일이 1픽셀이라도 다르면 결과가 달라야 함.
 - 정확히 10곡.
 
@@ -108,14 +110,26 @@ export async function onRequestPost(context) {
     energy: Number(mood?.energy ?? 0.5),
     chill: Number(mood?.chill ?? 0.5),
     acousticness: Number(mood?.acousticness ?? 0.5),
+    popularity: Number(mood?.popularity ?? 0.5),
   };
 
+  let popHint;
+  if (safeMood.popularity < 0.30) {
+    popHint = `메가히트는 0~1곡까지만, 나머지는 마니아·평론가에게 사랑받지만 대중에게는 덜 알려진 곡 / B-side / 앨범 수록곡 / 인디·소형 레이블 위주로 깊은 큐레이션.`;
+  } else if (safeMood.popularity > 0.65) {
+    popHint = `누구나 아는 메가히트·차트 상위 곡 중심. 익숙하고 듣자마자 알 수 있는 보편적인 선곡.`;
+  } else {
+    popHint = `히트곡과 덜 알려진 곡을 균형 있게 (대략 메가히트 2~3곡 + 마니아 픽 6~7곡).`;
+  }
+
   const userText = `사용자 선택 장르: ${genre}
-분위기 보정 (참고용, 0~1): energy=${safeMood.energy.toFixed(2)}, chill=${safeMood.chill.toFixed(2)}, acousticness=${safeMood.acousticness.toFixed(2)}
+분위기 보정 (참고용, 0~1): energy=${safeMood.energy.toFixed(2)}, chill=${safeMood.chill.toFixed(2)}, acousticness=${safeMood.acousticness.toFixed(2)}, popularity=${safeMood.popularity.toFixed(2)}
+
+인기도 설정 적용: ${popHint}
 
 위 사진을 분석하여 ${genre} 장르의 10곡짜리 플레이리스트를 만들어줘.
 - 같은 사진/장르라도 색감·광원·피사체에 따라 다양한 곡 조합을 보여줄 것.
-- 정확히 10곡, 실존하는 곡만.
+- 정확히 10곡, 실존하는 곡만, 같은 아티스트 중복 금지.
 - 응답은 지정된 JSON 형식 단 하나만, 코드 블록 없이.`;
 
   const reqBody = {
