@@ -958,34 +958,40 @@ bindScrollNav("#view-playlist", "#nav-playlist");
    generate
    ============================================================ */
 const loader = $("#loader");
-const loaderTexts = [
-  "이미지를 보고 있어요…",
-  "색감과 광원을 분석 중…",
-  "장르에 맞는 곡을 고르는 중…",
-  "큐레이션 노트를 다듬는 중…",
+// 누적 시간 기준 (ms) — 마지막 단계는 끝까지 그대로 유지됨
+const loaderSteps = [
+  { at: 0,     text: "이미지를 분석하고 있어요…" },
+  { at: 2000,  text: "색감과 광원을 살피는 중…" },
+  { at: 4500,  text: "사진의 분위기를 해석하는 중…" },
+  { at: 7000,  text: "장르에 맞는 곡을 떠올리는 중…" },
+  { at: 10000, text: "큐레이션 노트를 다듬는 중…" },
+  { at: 14000, text: "거의 다 됐어요…" },
 ];
+
+function startLoaderSequence() {
+  $("#loader-text").textContent = loaderSteps[0].text;
+  const timers = loaderSteps.slice(1).map(step =>
+    setTimeout(() => { $("#loader-text").textContent = step.text; }, step.at)
+  );
+  return () => timers.forEach(clearTimeout);
+}
 
 $("#generate").addEventListener("click", async () => {
   if ($("#generate").disabled) return;
 
   loader.classList.add("is-visible");
-  let i = 0;
-  $("#loader-text").textContent = loaderTexts[0];
-  const timer = setInterval(() => {
-    i = (i + 1) % loaderTexts.length;
-    $("#loader-text").textContent = loaderTexts[i];
-  }, 1800);
+  const stopLoader = startLoaderSequence();
 
   try {
     const resized = await resizeForUpload(state.dataUrl, 768, 0.85);
     const result = await generateWithGemini(resized);
-    clearInterval(timer);
+    stopLoader();
     loader.classList.remove("is-visible");
     state.lastResult = result;
     applyResult(result);
     showPlaylist();
   } catch (e) {
-    clearInterval(timer);
+    stopLoader();
     loader.classList.remove("is-visible");
     console.error(e);
     toast(`생성 실패: ${e.message}`, 3500);
