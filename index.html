@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    tokens (Apple Music dark)
@@ -45,6 +46,7 @@
   --r: 14px;
   --r-lg: 22px;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Pretendard Variable", Pretendard, system-ui, "Helvetica Neue", sans-serif;
+  --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   --shadow-card: 0 24px 60px -20px rgba(0,0,0,0.6);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -170,6 +172,43 @@ input { font: inherit; }
    studio view
    ============================================================ */
 .studio-pad { padding: 4px 20px 32px; }
+
+/* MOODmix wordmark */
+.brand-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 24px;
+}
+.brand-mark {
+  width: 48px; height: 48px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #fa233b 0%, #fb5c74 55%, #ff8a5c 100%);
+  display: grid; place-items: center;
+  position: relative;
+  box-shadow: 0 0 32px rgba(251,92,116,0.4), 0 8px 24px -6px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+.brand-mark::after {
+  content: "";
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(10,10,10,0.95);
+  box-shadow: inset 0 0 0 3.5px #fff;
+}
+.brand-name {
+  font-family: var(--font-serif);
+  font-size: 44px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+}
+.brand-name em {
+  font-style: italic;
+  color: var(--fg-muted);
+  font-weight: 400;
+}
 .tag-eyebrow {
   font-size: 12px;
   letter-spacing: 0.18em;
@@ -777,7 +816,10 @@ input[type=range]::-webkit-slider-thumb {
     </div>
 
     <div class="studio-pad">
-      <div class="tag-eyebrow">AI Curator</div>
+      <div class="brand-hero">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-name">MOOD<em>mix</em></div>
+      </div>
       <h1 class="hero-title">
         사진으로 만드는
         <span class="alt">나만의 플레이리스트</span>
