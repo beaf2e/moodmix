@@ -812,7 +812,7 @@ input[type=range]::-webkit-slider-thumb {
   <div class="view view-studio" id="view-studio">
     <div class="navbar" id="nav-studio">
       <div class="nav-spacer"></div>
-      <div class="nav-title">Moodmix</div>
+      <div class="nav-spacer"></div>
       <div class="nav-spacer"></div>
     </div>
 
@@ -1132,16 +1132,23 @@ function refreshCTA() {
 /* ============================================================
    nav (scroll-aware navbars)
    ============================================================ */
-function bindScrollNav(viewSel, navSel, titleEl, titleText) {
-  const view = $(viewSel);
-  const nav = $(navSel);
-  view.addEventListener("scroll", () => {
-    if (view.scrollTop > 80) nav.classList.add("is-scrolled");
-    else nav.classList.remove("is-scrolled");
-  });
-}
-bindScrollNav("#view-studio", "#nav-studio");
-bindScrollNav("#view-playlist", "#nav-playlist");
+// studio: 스크롤 시 글래스 배경만 적용 (텍스트 없음)
+$("#view-studio").addEventListener("scroll", () => {
+  $("#nav-studio").classList.toggle("is-scrolled", $("#view-studio").scrollTop > 80);
+});
+
+// playlist: pl-title이 화면 위로 사라지면 navbar 타이틀 표시
+const titleObserver = new IntersectionObserver(
+  ([entry]) => {
+    $("#nav-playlist").classList.toggle("is-scrolled", !entry.isIntersecting);
+  },
+  {
+    root: $("#view-playlist"),
+    rootMargin: "-56px 0px 0px 0px", // navbar 높이만큼 viewport 위쪽을 잘라냄
+    threshold: 0,
+  }
+);
+titleObserver.observe($("#pl-title"));
 
 /* ============================================================
    generate
@@ -1242,6 +1249,14 @@ function applyResult(r) {
 
   renderTracks();
   $("#view-playlist").scrollTop = 0;
+
+  // 공유 카드 백그라운드 사전 생성 (iOS user activation 보존을 위해)
+  cachedShareBlob = null;
+  setTimeout(() => {
+    generateShareCard()
+      .then(blob => { cachedShareBlob = blob; console.log("[moodmix] share card ready", blob?.size); })
+      .catch(e => console.error("[moodmix] share pre-gen failed:", e));
+  }, 200);
 }
 
 function renderTracks() {
@@ -1488,20 +1503,22 @@ async function generateShareCard() {
   return new Promise(resolve => canvas.toBlob(resolve, "image/png", 0.95));
 }
 
+let cachedShareBlob = null;
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 $("#share-btn-nav").addEventListener("click", async () => {
   if (!state.tracks.length) {
     toast("플레이리스트를 먼저 만들어주세요");
-    return;
-  }
-
-  toast("공유 카드 만드는 중…", 1500);
-
-  let blob;
-  try {
-    blob = await generateShareCard();
-  } catch (e) {
-    console.error(e);
-    toast(`이미지 생성 실패: ${e.message}`);
     return;
   }
 
@@ -1509,27 +1526,56 @@ $("#share-btn-nav").addEventListener("click", async () => {
   const title = r?.playlist_title || "내 Moodmix 플레이리스트";
   const url   = "https://moodmix-ai.pages.dev";
   const text  = `${title} — Moodmix에서 만들어보기`;
-  const file  = new File([blob], "moodmix-playlist.png", { type: "image/png" });
+
+  // 캐시된 이미지가 있으면 즉시 share (iOS user activation 보존)
+  if (cachedShareBlob) {
+    const file = new File([cachedShareBlob], "moodmix-playlist.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title, text, url });
+        return;
+      } catch (e) {
+        console.warn("[moodmix] share failed, falling back:", e);
+        if (e.name === "AbortError") return;
+        // 그 외 에러 → download fallback
+      }
+    }
+    downloadBlob(cachedShareBlob, "moodmix-playlist.png");
+    toast("이미지로 저장했어요");
+    return;
+  }
+
+  // 캐시 없음 → 즉시 생성 (iOS에서는 share 안 될 수 있음, download fallback)
+  toast("이미지 만드는 중…", 1500);
+  let blob;
+  try {
+    blob = await generateShareCard();
+  } catch (e) {
+    console.error("[moodmix] generateShareCard error:", e);
+    toast(`이미지 생성 실패: ${e.message}`, 3500);
+    return;
+  }
+  cachedShareBlob = blob;
+
+  if (!blob) {
+    toast("이미지를 만들 수 없어요");
+    return;
+  }
+
+  const file = new File([blob], "moodmix-playlist.png", { type: "image/png" });
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title, text, url });
+      return;
     } catch (e) {
-      if (e.name !== "AbortError") toast(`공유 실패: ${e.message}`, 3000);
+      console.warn("[moodmix] post-gen share failed:", e);
+      if (e.name === "AbortError") return;
     }
-    return;
   }
 
-  // fallback: 다운로드
-  const dlUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = dlUrl;
-  a.download = "moodmix-playlist.png";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(dlUrl), 1000);
-  toast("이미지를 다운로드했어요");
+  downloadBlob(blob, "moodmix-playlist.png");
+  toast("이미지로 저장했어요");
 });
 
 /* ============================================================
