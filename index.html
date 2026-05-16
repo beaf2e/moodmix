@@ -52,14 +52,20 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* iOS 26 Liquid Glass */
-  --glass-bg: rgba(255,255,255,0.06);
-  --glass-bg-strong: rgba(28,28,30,0.55);
-  --glass-bg-thicker: rgba(28,28,30,0.72);
-  --glass-border: rgba(255,255,255,0.14);
-  --glass-blur: blur(34px) saturate(180%);
-  --glass-shadow: 0 1px 0 rgba(255,255,255,0.12) inset,
-                  0 -1px 0 rgba(0,0,0,0.18) inset,
-                  0 18px 48px -16px rgba(0,0,0,0.55);
+  --glass-bg: rgba(15, 15, 25, 0.45);
+  --glass-bg-strong: rgba(15, 15, 25, 0.65);
+  --glass-bg-thicker: rgba(15, 15, 25, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(24px) saturate(200%);
+  --glass-shadow:
+    0 8px 32px -8px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 2px 4px rgba(255, 255, 255, 0.08);
+  --glass-highlight: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.06) 100%);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -125,17 +131,28 @@ input { font: inherit; }
   border-bottom-color: var(--glass-border);
 }
 .nav-btn {
+  position: relative;
   width: 44px; height: 44px;
   display: grid; place-items: center;
   color: #fff;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 0.5px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 6px 18px -4px rgba(0,0,0,0.4);
+  box-shadow: var(--glass-shadow);
   margin-left: 8px;
+  overflow: hidden;
 }
+.nav-btn::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.nav-btn > * { position: relative; }
 .nav-btn:active { transform: scale(0.94); }
 .nav-btn-right { margin-left: 0; margin-right: 8px; }
 .nav-back-icon {
@@ -237,15 +254,38 @@ input { font: inherit; }
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 0.5px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   overflow: hidden;
   display: grid; place-items: center;
   cursor: pointer;
   transition: transform .2s ease;
 }
+.dropzone::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.dropzone:not(.has-image)::after {
+  content: "";
+  position: absolute; inset: -50%;
+  background: radial-gradient(circle at 50% 30%, rgba(251, 92, 116, 0.18), transparent 70%);
+  animation: liquid-flow 15s linear infinite;
+  opacity: 0.45;
+  pointer-events: none;
+}
 .dropzone:active { transform: scale(0.99); }
 .dropzone.has-image { background: transparent; box-shadow: none; border-color: transparent; }
+.dropzone.has-image::before { display: none; }
+
+@keyframes liquid-flow {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  50%  { transform: translate(30px, 20px) rotate(8deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
 .dropzone.has-image .dz-inner { display: none; }
 .dropzone img.preview {
   position: absolute; inset: 0;
@@ -309,16 +349,27 @@ input { font: inherit; }
 
 /* mood sliders */
 .mood-card {
+  position: relative;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 0.5px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   border-radius: var(--r);
   padding: 6px 16px;
   margin-top: 4px;
   transition: opacity .5s ease;
+  overflow: hidden;
 }
+.mood-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+}
+.mood-card > * { position: relative; }
 .mood-card.is-locked {
   opacity: 0.45;
   pointer-events: none;
@@ -462,20 +513,31 @@ input[type=range]::-webkit-slider-thumb {
   display: flex; gap: 8px;
 }
 .pl-action {
+  position: relative;
   flex: 1;
   padding: 14px;
   border-radius: 14px;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 0.5px solid var(--glass-border);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset, 0 8px 20px -8px rgba(0,0,0,0.4);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   color: #fff;
   font-weight: 600;
   font-size: 16px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: transform .15s ease, background .15s ease;
+  overflow: hidden;
 }
+.pl-action::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.pl-action > * { position: relative; }
 .pl-action:active { background: var(--glass-bg-thicker); transform: scale(0.97); }
 .pl-action .icon-play { border-left-color: var(--accent-2); }
 .pl-action.is-primary { color: var(--accent-2); }
@@ -566,7 +628,7 @@ input[type=range]::-webkit-slider-thumb {
   background: var(--glass-bg-thicker);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 0.5px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
   border-radius: 18px;
   padding: 10px 12px;
   display: grid;
@@ -576,7 +638,17 @@ input[type=range]::-webkit-slider-thumb {
   z-index: 50;
   transition: transform .42s cubic-bezier(.32,.72,0,1);
   box-shadow: var(--glass-shadow);
+  overflow: hidden;
 }
+.mini::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+}
+.mini > * { position: relative; }
 .mini.is-visible { transform: translateX(-50%) translateY(0); }
 .mini-art {
   width: 44px; height: 44px;
