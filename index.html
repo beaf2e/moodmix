@@ -91,7 +91,14 @@ input { font: inherit; }
   padding-bottom: calc(96px + var(--safe-bottom));
   will-change: transform;
 }
-.view-studio { z-index: 1; transform: translateX(0); }
+.view-studio {
+  z-index: 1; transform: translateX(0);
+  background:
+    radial-gradient(110% 55% at 85% -5%, rgba(251,92,116,0.22) 0%, rgba(0,0,0,0) 55%),
+    radial-gradient(90% 45% at -10% 25%, rgba(183,148,246,0.16) 0%, rgba(0,0,0,0) 60%),
+    radial-gradient(140% 60% at 50% 100%, rgba(246,173,85,0.10) 0%, rgba(0,0,0,0) 60%),
+    var(--bg);
+}
 .view-playlist { z-index: 2; transform: translateX(100%); }
 .app.show-playlist .view-studio { transform: translateX(-22%); opacity: .35; }
 .app.show-playlist .view-playlist { transform: translateX(0); }
@@ -186,13 +193,18 @@ input { font: inherit; }
   aspect-ratio: 1/1;
   width: 100%;
   border-radius: var(--r-lg);
-  background: var(--surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   overflow: hidden;
   display: grid; place-items: center;
   cursor: pointer;
   transition: transform .2s ease;
 }
 .dropzone:active { transform: scale(0.99); }
+.dropzone.has-image { background: transparent; box-shadow: none; border-color: transparent; }
 .dropzone.has-image .dz-inner { display: none; }
 .dropzone img.preview {
   position: absolute; inset: 0;
@@ -236,23 +248,31 @@ input { font: inherit; }
   flex-shrink: 0;
   padding: 10px 18px;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 0.5px solid var(--glass-border);
   color: var(--fg);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  transition: transform .15s ease;
+  transition: transform .15s ease, background .15s ease;
 }
 .genre:active { transform: scale(0.96); }
 .genre.is-active {
   background: var(--gradient);
+  border-color: transparent;
   color: #fff;
   font-weight: 600;
 }
 
 /* mood sliders */
 .mood-card {
-  background: var(--surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   border-radius: var(--r);
   padding: 6px 16px;
   margin-top: 4px;
