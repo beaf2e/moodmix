@@ -1424,12 +1424,12 @@ async function generateShareCard() {
     ctx.font = `500 26px -apple-system, "SF Pro Text", "Pretendard", system-ui, sans-serif`;
     let tx = PAD;
     const ty = y + 30;
+    const th = 50;
+    const rad = 25;
     for (const tag of tags) {
       const tw = ctx.measureText(tag).width + 36;
-      const th = 50;
       // 글래스 칩
       ctx.fillStyle = "rgba(255,255,255,0.12)";
-      const rad = 25;
       ctx.beginPath();
       ctx.moveTo(tx + rad, ty);
       ctx.arcTo(tx + tw, ty,        tx + tw, ty + th, rad);
